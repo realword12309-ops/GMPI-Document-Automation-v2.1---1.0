@@ -1,0 +1,36 @@
+# Render "Blueprint" for GMPI Document Automation  (Render dashboard -> New + -> Blueprint -> choose your GitHub repository)
+# It creates TWO things: the website (web service) and its PostgreSQL database, and connects them for you.
+# Prices/plan names were checked on render.com on 28 Oct 2026 - confirm the amounts shown on screen before you press Apply.
+services:
+  - type: web
+    name: gmpi-document-automation
+    runtime: node
+    region: singapore              # closest Render region to the Philippines; the database below must use the same region
+    plan: 0.5c-512mb               # paid, always-on (~US$7/month). The free plan sleeps after 15 min and has no Shell - not for daily office use.
+    buildCommand: npm ci --omit=dev  # there is no separate frontend build: the web pages are served directly by the server
+    startCommand: node server/index.js
+    healthCheckPath: /healthz      # Render restarts the site automatically if this stops answering
+    autoDeployTrigger: commit      # every change you upload to GitHub is published automatically
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL          # filled in automatically from the database below (private network address; never typed or shown in the code)
+        fromDatabase:
+          name: gmpi-db
+          property: connectionString
+      # The three values below are asked for on screen when you create the Blueprint. They are NOT stored in GitHub.
+      - key: ADMIN_USERNAME        # your first administrator login name (used only while no users exist yet)
+        sync: false
+      - key: ADMIN_PASSWORD        # at least 10 characters; choose your own - there is no default password
+        sync: false
+      - key: SIGNATORY_PIN         # private PIN that unlocks editing of the default approver names/titles
+        sync: false
+      # PORT is set by Render itself; the server reads it automatically. Nothing to configure.
+databases:
+  - name: gmpi-db
+    region: singapore
+    plan: 0.1c-256mb               # paid (~US$6/month): keeps your data and includes backups. The FREE database is deleted after 30 days - never use it for real records.
+    postgresMajorVersion: "16"     # the version this app was tested with
+    databaseName: gmpi
+    user: gmpi
+    ipAllowList: []                # nobody outside Render can connect to the database; only your website can

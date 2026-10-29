@@ -1,0 +1,28 @@
+# --- Secrets and local settings: NEVER upload these to GitHub ---
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+
+# --- Programs downloaded by npm (Render installs them itself) ---
+node_modules/
+
+# --- Your records and backups (they contain customer and price data and password hashes) ---
+data/
+backups/
+*.zip
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+gmpi-backup-*
+
+# --- Logs and computer clutter ---
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

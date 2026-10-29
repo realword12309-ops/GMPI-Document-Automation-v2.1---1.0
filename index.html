@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#9E0B14">
+<link rel="icon" href="/assets/logo.png">
+<title>GMPI Document Automation</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app-ui" id="appUi">
+  <header class="topbar">
+    <div class="brand"><img src="/assets/logo.png" alt="Majesty Pharma"><span>Document Automation</span></div>
+    <nav>
+      <button class="nav-btn" data-nav="home">New document</button>
+      <button class="nav-btn" data-nav="history">Saved drafts &amp; history</button>
+    </nav>
+    <div class="storage" id="storageNote"></div>
+    <div class="userbox" id="userBox"></div>
+  </header>
+
+  <!-- LOGIN -->
+  <main id="viewLogin" class="view" hidden>
+    <div class="logincard">
+      <img src="/assets/logo.png" alt="Majesty Pharma">
+      <h1>Sign in</h1>
+      <label class="f">Username<input type="text" id="loginUser" autocomplete="username"></label>
+      <label class="f">Password<input type="password" id="loginPass" autocomplete="current-password"></label>
+      <div id="loginErr" class="loginerr"></div>
+      <button class="btn primary" id="loginBtn">Sign in</button>
+    </div>
+  </main>
+
+  <!-- HOME -->
+  <main id="viewHome" class="view">
+    <h1>Select a document type</h1>
+    <p class="muted">Enter or import the data once, review the live preview, then download Word / PDF or print.</p>
+    <div class="cards" id="typeCards"></div>
+  </main>
+
+  <!-- HISTORY -->
+  <main id="viewHistory" class="view" hidden>
+    <h1>Saved drafts &amp; history</h1>
+    <p class="muted" id="historyNote"></p>
+    <div class="tools" id="historyBar" style="margin:10px 0"></div>
+    <div id="historyList"></div>
+  </main>
+
+  <!-- EDITOR -->
+  <main id="viewEditor" class="view editor" hidden>
+    <div class="actionbar" id="actionBar">
+      <div class="doc-title-line"><strong id="edTypeName"></strong> <span id="edRef" class="pill"></span> <span id="saveState" class="pill"></span></div>
+      <div class="btns">
+        <button id="btnImport" class="btn">Import Excel / CSV</button>
+        <button id="btnVersions" class="btn">Versions &amp; files</button>
+        <button id="btnPreview" class="btn">Preview</button>
+        <button id="btnBack" class="btn" hidden>Back to Edit</button>
+        <button id="btnPrint" class="btn">Print</button>
+        <button id="btnWord" class="btn primary">Download Word</button>
+        <button id="btnPdf" class="btn primary">Download PDF</button>
+        <button id="btnSave" class="btn">Save Draft</button>
+        <button id="btnNew" class="btn danger-ghost">Start New</button>
+      </div>
+    </div>
+    <div class="split" id="split">
+      <section class="form" id="formPane"></section>
+      <section class="previewpane" id="previewPane">
+        <div class="pv-bar">
+          <span id="pvInfo" class="muted"></span>
+          <span class="seg" id="pvMode" hidden><button data-m="live" class="on">Live view</button><button data-m="pdf">Exact PDF view</button></span>
+        </div>
+        <div class="pv-scroll" id="pvScroll"><div class="pv-scale" id="pvScale"><div id="pvSheet"></div></div></div>
+        <iframe id="pdfFrame" title="PDF preview" hidden></iframe>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Print target: only this is visible when printing -->
+<div id="printRoot" aria-hidden="true"></div>
+
+<div id="modalRoot"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="/shared/gmpi.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
