@@ -1,0 +1,26 @@
+{
+  "name": "gmpi-document-automation",
+  "version": "2.1.0",
+  "description": "GMPI document automation: Official Price List and Price Increase Notice (local PC or online with PostgreSQL)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node server/selftest.js",
+    "backup": "node server/cli.js backup",
+    "restore": "node server/cli.js restore",
+    "create-user": "node server/cli.js create-user",
+    "reset-password": "node server/cli.js reset-password",
+    "users": "node server/cli.js users",
+    "status": "node server/cli.js status"
+  },
+  "engines": {
+    "node": ">=22.13.0 <23"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "jszip": "^3.10.1",
+    "pdfmake": "^0.2.10",
+    "pg": "^8.23.1",
+    "xlsx": "^0.18.5"
+  }
+}

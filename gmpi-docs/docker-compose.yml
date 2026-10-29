@@ -1,0 +1,31 @@
+# Run the online version on any server that has Docker:   docker compose up -d --build
+# Put your values in a file named .env next to this file (copy .env.example). Never commit .env.
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: gmpi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: gmpi
+    volumes:
+      - gmpi_pgdata:/var/lib/postgresql/data      # the database lives here and survives restarts/upgrades
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gmpi"]
+      interval: 5s
+      retries: 10
+  app:
+    build: .
+    restart: always
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://gmpi:${POSTGRES_PASSWORD}@db:5432/gmpi
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      SIGNATORY_PIN: ${SIGNATORY_PIN:?set SIGNATORY_PIN in .env}
+    ports:
+      - "3000:3000"      # put an HTTPS reverse proxy (Caddy / nginx / your host's load balancer) in front of this port
+volumes:
+  gmpi_pgdata:
