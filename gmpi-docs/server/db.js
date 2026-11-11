@@ -47,23 +47,52 @@ async function migrate(db) {
     for (const stmt of sql.split(';').map((s) => s.trim()).filter(Boolean)) await db.run(stmt);
     await db.run('UPDATE schema_version SET version = ?', [v + 1]);
   }
-  await healIdTypes(db);
+  await reconcileSchema(db);
 }
 
-// A database created outside this app can hold users.id / sessions.user_id as INTEGER while every id
-// this app writes is TEXT; the session join then dies with "operator does not exist: integer = text".
-// CREATE TABLE IF NOT EXISTS cannot fix an existing table, so align the two columns here, keeping values.
-async function healIdTypes(db) {
+// A database created outside this app (or by an older version) can have wrong column types or be missing
+// columns entirely; CREATE TABLE IF NOT EXISTS cannot fix that. Align every table with SCHEMA above:
+// add missing columns (backfilled), convert wrong types, keep all values. Never drops columns or rows.
+// [column, type, backfill, keepDefault] — backfill is used only when adding; keepDefault = default in SCHEMA.
+const COLUMNS = {
+  users: [['id', 'TEXT', "''"], ['username', 'TEXT', "''"], ['pass_hash', 'TEXT', "''"], ['role', 'TEXT', "'admin'"], ['active', 'INTEGER', '1', true], ['created_at', 'TEXT', "''"]],
+  sessions: [['token_hash', 'TEXT', "''"], ['user_id', 'TEXT', "''"], ['expires_at', 'TEXT', "''"], ['created_at', 'TEXT', "''"]],
+  docs: [['id', 'TEXT', "''"], ['type', 'TEXT', "''"], ['ref_no', 'TEXT', "''"], ['title', 'TEXT', "''"], ['customer', 'TEXT', "''", true], ['status', 'TEXT', "'draft'", true], ['data', 'TEXT', "''"], ['revision', 'INTEGER', '1', true], ['row_count', 'INTEGER', '0', true], ['search_text', 'TEXT', "''", true], ['created_by', 'TEXT', "''", true], ['updated_by', 'TEXT', "''", true], ['created_at', 'TEXT', "''"], ['updated_at', 'TEXT', "''"]],
+  revisions: [['id', 'TEXT', "''"], ['doc_id', 'TEXT', "''"], ['revision', 'INTEGER', '0'], ['data', 'TEXT', "''"], ['saved_by', 'TEXT', "''", true], ['saved_at', 'TEXT', "''"]],
+  exports: [['id', 'TEXT', "''"], ['doc_id', 'TEXT', "''"], ['format', 'TEXT', "''"], ['filename', 'TEXT', "''"], ['size', 'INTEGER', '0'], ['doc_revision', 'INTEGER', '0', true], ['created_by', 'TEXT', "''", true], ['created_at', 'TEXT', "''"], ['content', 'BYTEA', "''"]],
+  counters: [['name', 'TEXT', "''"], ['value', 'INTEGER', '0']],
+  meta: [['key', 'TEXT', "''"], ['value', 'TEXT', "''"]],
+};
+const TYPE_OK = { TEXT: ['text', 'character varying', 'character'], INTEGER: ['integer', 'bigint', 'smallint'], BYTEA: ['bytea'] };
+function typeCast(c, from, to) {
+  if (to === 'TEXT') return `${c}::text`;
+  if (to === 'BYTEA') return `convert_to(${c}::text, 'UTF8')`;
+  if (from === 'boolean') return `CASE WHEN ${c} THEN 1 ELSE 0 END`;
+  if (TYPE_OK.TEXT.includes(from)) return `CASE WHEN ${c}::text ~ '^(-|)[0-9]+$' THEN (${c}::text)::integer ELSE 0 END`;
+  return `${c}::integer`;
+}
+async function reconcileSchema(db) {
   if (db.kind !== 'postgres') return;
   let changed = false;
-  for (const [t, c] of [['users', 'id'], ['sessions', 'user_id']]) {
-    const r = await db.query('SELECT data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?', [t, c]);
-    const ty = r[0] && r[0].data_type;
-    if (!ty || ty === 'text' || ty === 'character varying') continue;
-    await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} TYPE TEXT USING ${c}::text`);
-    await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
-    console.log(`Database repair: ${t}.${c} was ${ty}, converted to TEXT (all values kept).`);
-    changed = true;
+  for (const [t, cols] of Object.entries(COLUMNS)) {
+    const have = {};
+    for (const r of await db.query("SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ?", [t])) have[r.column_name] = r;
+    for (const [c, type, backfill, keepDefault] of cols) {
+      const cur = have[c];
+      if (!cur) {
+        await db.run(`ALTER TABLE ${t} ADD COLUMN ${c} ${type} NOT NULL DEFAULT ${backfill}`);
+        if (!keepDefault) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
+        console.log(`Database repair: ${t}.${c} was missing; added ${type}, existing rows backfilled with ${backfill}.`);
+        changed = true;
+      } else if (!TYPE_OK[type].includes(cur.data_type)) {
+        if (cur.column_default != null) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
+        await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} TYPE ${type} USING ${typeCast(c, cur.data_type, type)}`);
+        if (keepDefault) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} SET DEFAULT ${backfill}`);
+        console.log(`Database repair: ${t}.${c} was ${cur.data_type}; converted to ${type} (all values kept).`);
+        changed = true;
+      } else if (keepDefault && cur.column_default == null) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} SET DEFAULT ${backfill}`);
+      else if (!keepDefault && /nextval/i.test(cur.column_default || '')) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
+    }
   }
   if (changed) await db.run('DELETE FROM sessions WHERE user_id NOT IN (SELECT id FROM users)');
 }
