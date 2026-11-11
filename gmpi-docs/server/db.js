@@ -47,6 +47,25 @@ async function migrate(db) {
     for (const stmt of sql.split(';').map((s) => s.trim()).filter(Boolean)) await db.run(stmt);
     await db.run('UPDATE schema_version SET version = ?', [v + 1]);
   }
+  await healIdTypes(db);
+}
+
+// A database created outside this app can hold users.id / sessions.user_id as INTEGER while every id
+// this app writes is TEXT; the session join then dies with "operator does not exist: integer = text".
+// CREATE TABLE IF NOT EXISTS cannot fix an existing table, so align the two columns here, keeping values.
+async function healIdTypes(db) {
+  if (db.kind !== 'postgres') return;
+  let changed = false;
+  for (const [t, c] of [['users', 'id'], ['sessions', 'user_id']]) {
+    const r = await db.query('SELECT data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?', [t, c]);
+    const ty = r[0] && r[0].data_type;
+    if (!ty || ty === 'text' || ty === 'character varying') continue;
+    await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} TYPE TEXT USING ${c}::text`);
+    await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
+    console.log(`Database repair: ${t}.${c} was ${ty}, converted to TEXT (all values kept).`);
+    changed = true;
+  }
+  if (changed) await db.run('DELETE FROM sessions WHERE user_id NOT IN (SELECT id FROM users)');
 }
 
 async function openSqlite(file) {

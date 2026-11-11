@@ -57,7 +57,7 @@ async function createApp(cfg, log = console.log) {
     try { const r = await auth.login((req.body || {}).username, (req.body || {}).password, req.ip); auth.setCookie(res, req, r.token, r.maxAge); res.json({ user: r.user }); }
     catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); next(e); }
   });
-  app.post('/api/auth/logout', async (req, res) => { await auth.logout(auth.cookieToken(req)); auth.setCookie(res, req, '', 0); res.json({ ok: true }); });
+  app.post('/api/auth/logout', async (req, res, next) => { try { await auth.logout(auth.cookieToken(req)); auth.setCookie(res, req, '', 0); res.json({ ok: true }); } catch (e) { next(e); } });
 
   // signatory unlock (approver names/titles that have template defaults)
   const tokens = new Map(); let fails = 0, lockedUntil = 0;
@@ -78,17 +78,19 @@ async function createApp(cfg, log = console.log) {
   const badType = (type) => !G.DOC_TYPES[type];
 
   // ------------------------------------------------------------ config / status
-  app.get('/api/config', async (req, res) => {
-    let user = null; if (cfg.authRequired) user = await auth.userForToken(auth.cookieToken(req)); else user = { id: 'local', username: 'local', role: 'admin' };
-    const out = { version: VERSION, auth: { required: cfg.authRequired, user }, types: Object.values(G.DOC_TYPES).map((t) => ({ id: t.id, name: t.name, provisional: t.provisional })) };
-    if (user) Object.assign(out, {
-      storage: { engine: db.kind, persistent: true, location: db.kind === 'sqlite' ? db.file : 'PostgreSQL database (DATABASE_URL)', backups: cfg.autoBackup ? cfg.backupDir : null },
-      lockedDefaults: Object.fromEntries(Object.values(G.DOC_TYPES).map((t) => [t.id, t.defaults.signatories.map((s) => ({ name: !!s.name, title: !!s.title }))])),
-      unlocked: tokenOk(req),
-    });
-    res.json(out);
+  app.get('/api/config', async (req, res, next) => {
+    try {
+      let user = null; if (cfg.authRequired) user = await auth.userForToken(auth.cookieToken(req)); else user = { id: 'local', username: 'local', role: 'admin' };
+      const out = { version: VERSION, auth: { required: cfg.authRequired, user }, types: Object.values(G.DOC_TYPES).map((t) => ({ id: t.id, name: t.name, provisional: t.provisional })) };
+      if (user) Object.assign(out, {
+        storage: { engine: db.kind, persistent: true, location: db.kind === 'sqlite' ? db.file : 'PostgreSQL database (DATABASE_URL)', backups: cfg.autoBackup ? cfg.backupDir : null },
+        lockedDefaults: Object.fromEntries(Object.values(G.DOC_TYPES).map((t) => [t.id, t.defaults.signatories.map((s) => ({ name: !!s.name, title: !!s.title }))])),
+        unlocked: tokenOk(req),
+      });
+      res.json(out);
+    } catch (e) { next(e); }
   });
-  app.get('/api/admin/status', admin, async (req, res) => res.json({ engine: db.kind, counts: await store.counts(), lastBackup: cfg.autoBackup ? latestBackup(cfg.backupDir) : null, backupDir: cfg.autoBackup ? cfg.backupDir : null, version: VERSION }));
+  app.get('/api/admin/status', admin, async (req, res, next) => { try { res.json({ engine: db.kind, counts: await store.counts(), lastBackup: cfg.autoBackup ? latestBackup(cfg.backupDir) : null, backupDir: cfg.autoBackup ? cfg.backupDir : null, version: VERSION }); } catch (e) { next(e); } });
   app.get('/api/admin/backup', admin, async (req, res, next) => {
     try { const buf = await createBackupZip(store); res.setHeader('Content-Type', 'application/zip'); res.setHeader('Content-Disposition', `attachment; filename="gmpi-backup-${new Date().toISOString().slice(0, 10)}.zip"`); res.end(buf); } catch (e) { next(e); }
   });
@@ -100,7 +102,7 @@ async function createApp(cfg, log = console.log) {
   app.post('/api/admin/backup-now', admin, async (req, res, next) => { try { res.json({ file: await writeBackup(store, cfg.backupDir) }); } catch (e) { next(e); } });
 
   // ------------------------------------------------------------ users (admin)
-  app.get('/api/users', admin, async (req, res) => res.json(await auth.listUsers()));
+  app.get('/api/users', admin, async (req, res, next) => { try { res.json(await auth.listUsers()); } catch (e) { next(e); } });
   app.post('/api/users', admin, async (req, res) => { try { res.json(await auth.createUser(req.body.username, req.body.password, req.body.role)); } catch (e) { res.status(400).json({ error: e.message }); } });
   app.patch('/api/users/:id', admin, async (req, res) => { try { await auth.updateUser(req.params.id, req.body || {}); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 
