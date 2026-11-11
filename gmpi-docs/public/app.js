@@ -192,7 +192,7 @@
 
   function renderPList(key) {
     const host = $('[data-pl="' + key + '"]'); const arr = S.data[key];
-    host.innerHTML = arr.length ? arr.map((p, i) => '<div class="pitem"><textarea rows="2" data-i="' + i + '" style="border:1px solid #cfc9bb;border-radius:5px;padding:6px 8px;width:100%;font:inherit">' + esc(p) + '</textarea><div class="ctl"><button data-up="' + i + '" title="Move up">▲</button><button data-dn="' + i + '" title="Move down">▼</button><button data-rm="' + i + '" title="Remove">✕</button></div></div>').join('') : '<div class="muted" style="font-size:12px">(none)</div>';
+    host.innerHTML = arr.length ? arr.map((p, i) => '<div class="pitem"><textarea rows="2" data-i="' + i + '" style="border:1px solid var(--line2);border-radius:5px;padding:6px 8px;width:100%;font:inherit">' + esc(p) + '</textarea><div class="ctl"><button data-up="' + i + '" title="Move up">▲</button><button data-dn="' + i + '" title="Move down">▼</button><button data-rm="' + i + '" title="Remove">✕</button></div></div>').join('') : '<div class="muted" style="font-size:12px">(none)</div>';
     $$('textarea', host).forEach((ta) => (ta.oninput = () => { arr[+ta.dataset.i] = ta.value; markDirty(); }));
     $$('[data-rm]', host).forEach((b) => (b.onclick = () => { arr.splice(+b.dataset.rm, 1); renderPList(key); markDirty(); }));
     $$('[data-up]', host).forEach((b) => (b.onclick = () => { const i = +b.dataset.up; if (i > 0) { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; renderPList(key); markDirty(); } }));
@@ -214,7 +214,7 @@
     const b = $('#btnUnlock'); b.hidden = !anyLock; b.textContent = unlocked() ? 'Lock again' : 'Unlock…';
     b.onclick = async () => {
       if (unlocked()) { S.token = ''; sessionStorage.removeItem('gmpiToken'); renderSigs(); return; }
-      const m = modal('<h2>Unlock signatories</h2><label class="f">Administrator PIN<input type="password" id="pin" autofocus></label><p class="muted" id="pinErr" style="color:#c0182b"></p><div class="foot"><button class="btn" id="pc">Cancel</button><button class="btn primary" id="po">Unlock</button></div>', 'sm');
+      const m = modal('<h2>Unlock signatories</h2><label class="f">Administrator PIN<input type="password" id="pin" autofocus></label><p class="muted" id="pinErr" style="color:var(--err)"></p><div class="foot"><button class="btn" id="pc">Cancel</button><button class="btn primary" id="po">Unlock</button></div>', 'sm');
       const go = async () => { try { const j = await (await api('/api/unlock', { json: { pin: $('#pin', m.el).value } })).json(); S.token = j.token; sessionStorage.setItem('gmpiToken', j.token); m.close(); renderSigs(); toast('Unlocked for ' + j.hours + ' hours'); } catch (e) { $('#pinErr', m.el).textContent = e.message; } };
       $('#po', m.el).onclick = go; $('#pc', m.el).onclick = m.close; $('#pin', m.el).onkeydown = (e) => { if (e.key === 'Enter') go(); };
     };
@@ -255,9 +255,9 @@
     if (focus !== false) { const ta = $('textarea[data-r="' + (S.data.products.length - n) + '"]'); ta && ta.focus(); }
   }
   const isAuto = (k) => !!(typeDef().columns.find((x) => x.key === k) || {}).auto;
-  function updateSeq() { // renumber the visible rows after an edit (blank rows have no number)
+  function updateSeq() { // refresh the auto-number hint shown in blank Item No. cells (typed codes are kept)
     const d = S.data, from = S.gridPage * GRID_PAGE; let n = d.products.slice(0, from).filter((p) => !G.isBlankRow(S.type, p)).length;
-    $$('#gBody .seqno').forEach((el) => { const blank = G.isBlankRow(S.type, d.products[+el.dataset.seq]); el.textContent = blank ? '' : ++n; });
+    $$('#gBody textarea[data-auto]').forEach((el) => { const blank = G.isBlankRow(S.type, d.products[+el.dataset.r]); if (!blank) n++; el.placeholder = blank ? '' : String(n); });
   }
   function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; }
   function renderGridBody() {
@@ -266,7 +266,7 @@
     const from = S.gridPage * GRID_PAGE, to = Math.min(total, from + GRID_PAGE);
     let seq = d.products.slice(0, from).filter((p) => !G.isBlankRow(S.type, p)).length;
     body.innerHTML = d.products.slice(from, to).map((p, i) => { const r = from + i, blank = G.isBlankRow(S.type, p); if (!blank) seq++; return '<tr data-r="' + r + '"><td class="n">' + (r + 1) + '</td>' +
-      cols.map((c) => isAuto(c.key) ? '<td class="auto" title="Numbered automatically"><span class="seqno" data-seq="' + r + '">' + (blank ? '' : seq) + '</span></td>' : '<td data-key="' + c.key + '"><textarea rows="1" data-r="' + r + '" data-key="' + c.key + '">' + esc(p[c.key]) + '</textarea></td>').join('') +
+      cols.map((c) => isAuto(c.key) ? '<td class="auto" data-key="' + c.key + '" title="Type an item code, or leave blank to auto-number"><textarea rows="1" class="autoin" data-r="' + r + '" data-key="' + c.key + '" data-auto="1" placeholder="' + (blank ? '' : seq) + '">' + esc(p[c.key]) + '</textarea></td>' : '<td data-key="' + c.key + '"><textarea rows="1" data-r="' + r + '" data-key="' + c.key + '">' + esc(p[c.key]) + '</textarea></td>').join('') +
       '<td class="act"><button data-dup="' + r + '" title="Duplicate row">⧉</button><button data-up="' + r + '" title="Move up">▲</button><button data-dn="' + r + '" title="Move down">▼</button><button data-del="' + r + '" title="Delete row">✕</button></td></tr>'; }).join('');
     const pg = $('#gPager');
     if (pg) {
@@ -290,7 +290,7 @@
         e.preventDefault();
         const lines = txt.replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').map((l) => l.split('\t'));
         const r0 = +ta.dataset.r, c0 = cols.findIndex((c) => c.key === ta.dataset.key);
-        lines.forEach((cells, i) => { while (d.products.length <= r0 + i) d.products.push(G.emptyProduct(S.type)); cells.forEach((v, j) => { if (cols[c0 + j] && !isAuto(cols[c0 + j].key)) d.products[r0 + i][cols[c0 + j].key] = G.cleanText(v.trim()); }); });
+        lines.forEach((cells, i) => { while (d.products.length <= r0 + i) d.products.push(G.emptyProduct(S.type)); cells.forEach((v, j) => { if (cols[c0 + j]) d.products[r0 + i][cols[c0 + j].key] = G.cleanText(v.trim()); }); });
         renderGridBody(); markDirty();
       };
     });
@@ -473,7 +473,7 @@
     const bar = $('#historyBar'), host = $('#historyList');
     if (!bar.dataset.ready) {
       bar.dataset.ready = '1';
-      bar.innerHTML = '<input id="hQ" type="search" placeholder="Search customer, reference no., product, principal…" style="min-width:320px;padding:7px 9px;border:1px solid #cfc9bb;border-radius:5px">' +
+      bar.innerHTML = '<input id="hQ" type="search" placeholder="Search customer, reference no., product, principal…" style="min-width:320px;padding:7px 9px;border:1px solid var(--line2);border-radius:5px">' +
         '<select id="hType" style="padding:7px"><option value="">All types</option>' + S.cfg.types.map((t) => '<option value="' + t.id + '">' + esc(t.name) + '</option>').join('') + '</select>' +
         '<select id="hStatus" style="padding:7px"><option value="">Any status</option><option value="draft">Draft</option><option value="exported">Exported</option></select>';
       let t; $('#hQ').oninput = (e) => { clearTimeout(t); t = setTimeout(() => { H.q = e.target.value; H.page = 0; loadHistory(); }, 250); };
@@ -495,7 +495,7 @@
       $$('[data-c]', host).forEach((b) => (b.onclick = async () => { try { await api('/api/docs/' + b.dataset.c + '/duplicate', { method: 'POST' }); loadHistory(); } catch (e) { toast(e.message, true); } }));
       $$('[data-x]', host).forEach((b) => (b.onclick = async () => { if (await confirmBox('Delete this saved document, its saved versions and its generated files permanently?', 'Delete')) { try { await api('/api/docs/' + b.dataset.x, { method: 'DELETE' }); loadHistory(); } catch (e) { toast(e.message, true); } } }));
       const pv = $('#hPrev'), nx = $('#hNext'); if (pv) pv.onclick = () => { H.page--; loadHistory(); }; if (nx) nx.onclick = () => { H.page++; loadHistory(); };
-    } catch (e) { host.innerHTML = '<p style="color:#c0182b">' + esc(e.message) + '</p>'; }
+    } catch (e) { host.innerHTML = '<p style="color:var(--err)">' + esc(e.message) + '</p>'; }
   }
   $('#btnVersions').onclick = () => S.id && openVersions(S.id);
   async function openVersions(id) {
@@ -537,7 +537,7 @@
       IM.opts = IM.opts || { pct: 'strict', calc: S.type === 'price-increase' }; IM.rows = null;
       const of = $('#impClose', IM.m.el); if (of) of.parentElement.hidden = true; // the wizard has its own Cancel buttons
       renderSetup();
-    } catch (e) { body.innerHTML = '<p style="color:#c0182b"><b>The file could not be imported.</b> ' + esc(e.message) + '</p><p class="muted">Nothing was added to your document.</p>'; }
+    } catch (e) { body.innerHTML = '<p style="color:var(--err)"><b>The file could not be imported.</b> ' + esc(e.message) + '</p><p class="muted">Nothing was added to your document.</p>'; }
   }
   function headerTexts() { return IM.headerRow >= 0 ? G.combinedHeaders(IM.res.matrix, IM.headerRow, IM.headerRows) : []; }
   function remap() { if (IM.headerRow >= 0) IM.mapping = G.mapFromHeaders(S.type, headerTexts()); else IM.mapping = {}; }
@@ -636,7 +636,6 @@
       r.errFields = v.errors.map((x) => x.field).concat(r.notes.filter((n) => n.level === 'error').map((n) => n.field));
       r.warnFields = v.warnings.map((x) => x.field);
       r.warns = v.warnings.map((x) => x.msg);
-      if (S.type === 'price-list' && String(r.row.itemNo || '').trim() && !/^\d+$/.test(String(r.row.itemNo).trim())) { r.warns.push('The file’s Item No. “' + r.row.itemNo + '” is not used — Item No. is numbered automatically (map that column to Item Description if it is a product code).'); r.warnFields.push('itemNo'); }
       if (initial) r.include = !r.errors.length && !r.dup; else if (r.errors.length) r.include = false;
     });
   }
@@ -646,13 +645,13 @@
   }
   function renderReview() {
     const body = $('#impBody', IM.m.el), t = G.DOC_TYPES[S.type], exist = S.data.products.filter((p) => !G.isBlankRow(S.type, p)).length;
-    const mappedKeys = Object.values(IM.mapping), cols = G.importFields(S.type).filter((f) => mappedKeys.includes(f.key) && !isAuto(f.key));
+    const mappedKeys = Object.values(IM.mapping), cols = G.importFields(S.type).filter((f) => mappedKeys.includes(f.key) || isAuto(f.key));
     IM.showNo = G.DOC_TYPES[S.type].columns.some((c) => c.auto);
     const dupeFile = (S.data.importLog || []).find((x) => x.hash === IM.res.hash && x.sheet === IM.res.sheet);
     body.innerHTML = '<div id="impSum" class="summary"></div>' +
       '<div class="tools" style="margin:8px 0"><label>Show <select id="impFilter"><option value="all">all rows</option><option value="bad">rows needing correction</option><option value="dup">duplicates</option><option value="sel">rows to import</option></select></label>' +
       '<button class="btn small" id="impAll">Select all valid</button><button class="btn small" id="impNone">Select none</button><span class="muted" style="font-size:12px">Edit any cell to correct it.</span></div>' +
-      '<div class="imp-table"><table><thead><tr><th>Add</th><th>Excel row</th>' + (IM.showNo ? '<th title="Assigned automatically, in order">Item No.</th>' : '') + cols.map((c) => '<th>' + esc(c.label) + '</th>').join('') + '<th>Check</th></tr></thead><tbody id="impRows"></tbody></table></div><div class="pager" id="impPager"></div>' +
+      '<div class="imp-table"><table><thead><tr><th>Add</th><th>Excel row</th>' + cols.map((c) => '<th' + (isAuto(c.key) ? ' title="Type a code, or leave blank to auto-number"' : '') + '>' + esc(isAuto(c.key) ? 'Item No.' : c.label) + '</th>').join('') + '<th>Check</th></tr></thead><tbody id="impRows"></tbody></table></div><div class="pager" id="impPager"></div>' +
       '<div style="margin-top:10px"><label><input type="radio" name="impMode" value="add" ' + (exist ? 'checked' : '') + '> Add to the ' + exist + ' existing row(s)</label> &nbsp; <label><input type="radio" name="impMode" value="replace" ' + (exist ? '' : 'checked') + '> Replace existing rows</label></div>' +
       '<div id="impAck"></div><div class="foot"><button class="btn" id="impBack">← Back to mapping</button><button class="btn" id="impClose3">Cancel</button><button class="btn primary" id="impGo">Import</button></div>';
     IM.cols = cols;
@@ -674,8 +673,8 @@
     let seq = replace ? 0 : S.data.products.filter((p) => !G.isBlankRow(S.type, p)).length; IM.seq = IM.rows.map((r) => (r.include && !r.errors.length ? ++seq : null)); // the Item No. each row will get
     const pages = Math.max(1, Math.ceil(list.length / IM_PAGE)); IM.page = Math.min(IM.page, pages - 1);
     const slice = list.slice(IM.page * IM_PAGE, IM.page * IM_PAGE + IM_PAGE);
-    $('#impRows', body).innerHTML = slice.map(([r, i]) => '<tr data-i="' + i + '" class="' + (r.errors.length ? 'bad' : '') + '"><td><input type="checkbox" data-inc="' + i + '"' + (r.include ? ' checked' : '') + (r.errors.length ? ' disabled' : '') + '></td><td>' + r.line + '</td>' + (IM.showNo ? '<td class="auto" title="Assigned automatically, in order">' + (IM.seq[i] || '—') + '</td>' : '') +
-      IM.cols.map((c) => { const bad = r.errFields.includes(c.key), wn = r.warnFields.includes(c.key); return '<td data-key="' + c.key + '" class="' + (bad ? 'err' : wn ? 'warn' : '') + '"><input class="c" data-i="' + i + '" data-key="' + c.key + '" value="' + esc(r.row[c.key]) + '"></td>'; }).join('') + '<td class="stc" style="min-width:210px">' + rowStatus(r) + '</td></tr>').join('') || '<tr><td colspan="' + (IM.cols.length + 3) + '" class="muted" style="padding:14px">No rows to show for this filter.</td></tr>';
+    $('#impRows', body).innerHTML = slice.map(([r, i]) => '<tr data-i="' + i + '" class="' + (r.errors.length ? 'bad' : '') + '"><td><input type="checkbox" data-inc="' + i + '"' + (r.include ? ' checked' : '') + (r.errors.length ? ' disabled' : '') + '></td><td>' + r.line + '</td>' +
+      IM.cols.map((c) => { const bad = r.errFields.includes(c.key), wn = r.warnFields.includes(c.key), au = isAuto(c.key); return '<td data-key="' + c.key + '" class="' + (bad ? 'err' : wn ? 'warn' : '') + (au ? ' auto' : '') + '"><input class="c" data-i="' + i + '" data-key="' + c.key + '" value="' + esc(r.row[c.key]) + '"' + (au ? ' placeholder="' + (IM.seq[i] || '') + '" title="Leave blank to auto-number"' : '') + '></td>'; }).join('') + '<td class="stc" style="min-width:210px">' + rowStatus(r) + '</td></tr>').join('') || '<tr><td colspan="' + (IM.cols.length + 3) + '" class="muted" style="padding:14px">No rows to show for this filter.</td></tr>';
     $('#impPager', body).innerHTML = list.length + ' row(s) ' + (pages > 1 ? '· page ' + (IM.page + 1) + '/' + pages + ' <button class="btn small" id="ipPrev">‹</button> <button class="btn small" id="ipNext">›</button>' : '');
     const pv = $('#ipPrev', body), nx = $('#ipNext', body); if (pv) pv.onclick = () => { if (IM.page > 0) { IM.page--; drawImportRows(); } }; if (nx) nx.onclick = () => { if (IM.page < pages - 1) { IM.page++; drawImportRows(); } };
     let timer; $$('input.c', body).forEach((el) => (el.oninput = () => { const r = IM.rows[+el.dataset.i]; r.row[el.dataset.key] = el.value; clearTimeout(timer); timer = setTimeout(() => { const wasBad = r.errors.length; revalidateImport(false); if (wasBad && !r.errors.length) { r.include = !r.dup; if (IM.showNo) { drawImportRows(); updateImportSummary(); return; } } const tr = el.closest('tr'); tr.querySelector('.stc').innerHTML = rowStatus(r); tr.className = r.errors.length ? 'bad' : ''; const cb = tr.querySelector('[data-inc]'); cb.disabled = !!r.errors.length; cb.checked = r.include; updateImportSummary(); }, 200); }));
@@ -686,8 +685,8 @@
     $('#impSum', body).innerHTML = '<b>' + c.total + '</b> product row(s) found · <span class="o">' + c.valid + ' valid</span>' + (c.bad.length ? ' · <span class="e">' + c.bad.length + ' need correction (Excel rows ' + c.bad.slice(0, 20).map((r) => r.line).join(', ') + (c.bad.length > 20 ? '…' : '') + ')</span>' : '') + (c.dups.length ? ' · <span class="w">' + c.dups.length + ' duplicate(s)</span>' : '') + ' · <b>' + c.sel.length + ' selected to import</b>' + (IM.blank ? '<br><span class="muted">' + IM.blank + ' blank row(s) skipped.</span>' : '') +
       (Object.keys(IM.unmapped).length ? '<br><span class="w">⚠ Not imported (unmapped columns that contain data): ' + Object.keys(IM.unmapped).map((k) => colLetter(+k) + ' “' + esc(headerTexts()[k] || '') + '” (' + IM.unmapped[k] + ' rows)').join(', ') + '</span>' : '');
     const dupeFile = (S.data.importLog || []).find((x) => x.hash === IM.res.hash && x.sheet === IM.res.sheet), unsel = c.total - c.sel.length;
-    $('#impAck', body).innerHTML = (c.bad.length ? '<label style="display:block;margin-top:8px;color:#c0182b"><input type="checkbox" id="impSkip"' + (IM.ack ? ' checked' : '') + '> I understand that Excel row(s) ' + c.bad.slice(0, 20).map((r) => r.line).join(', ') + (c.bad.length > 20 ? '…' : '') + ' will NOT be imported (they have errors).</label>' : '') +
-      (dupeFile ? '<label style="display:block;margin-top:8px;color:#b26a00"><input type="checkbox" id="impAgain"' + (IM.again ? ' checked' : '') + '> This workbook sheet was already imported on ' + esc(new Date(dupeFile.at).toLocaleString()) + '. Import it again anyway.</label>' : '');
+    $('#impAck', body).innerHTML = (c.bad.length ? '<label style="display:block;margin-top:8px;color:var(--err)"><input type="checkbox" id="impSkip"' + (IM.ack ? ' checked' : '') + '> I understand that Excel row(s) ' + c.bad.slice(0, 20).map((r) => r.line).join(', ') + (c.bad.length > 20 ? '…' : '') + ' will NOT be imported (they have errors).</label>' : '') +
+      (dupeFile ? '<label style="display:block;margin-top:8px;color:var(--warn)"><input type="checkbox" id="impAgain"' + (IM.again ? ' checked' : '') + '> This workbook sheet was already imported on ' + esc(new Date(dupeFile.at).toLocaleString()) + '. Import it again anyway.</label>' : '');
     const sk = $('#impSkip', body), ag = $('#impAgain', body), go = $('#impGo', body);
     const gate = () => { IM.ack = sk ? sk.checked : true; IM.again = ag ? ag.checked : true; go.disabled = !c.sel.length || !IM.ack || !IM.again; };
     if (sk) sk.onchange = gate; if (ag) ag.onchange = gate; gate();
@@ -719,13 +718,13 @@
   }
   function showImportReport(r) {
     const partial = r.skipped.length > 0;
-    const m = modal('<h2 style="color:' + (partial ? '#b26a00' : '#1b7f3b') + '">' + (partial ? '⚠ Partly imported: ' + r.imported + ' of ' + r.detected + ' product rows' : '✔ Imported all ' + r.imported + ' product rows') + '</h2>' +
+    const m = modal('<h2 style="color:' + (partial ? 'var(--warn)' : 'var(--ok)') + '">' + (partial ? '⚠ Partly imported: ' + r.imported + ' of ' + r.detected + ' product rows' : '✔ Imported all ' + r.imported + ' product rows') + '</h2>' +
       '<dl class="report"><dt>Source file</dt><dd>' + esc(r.file) + '</dd><dt>Worksheet</dt><dd>' + esc(r.sheet || '(CSV file)') + '</dd><dt>Header row detected / chosen</dt><dd>Excel row ' + r.headerRow + (r.headerRows > 1 ? ' (spanning ' + r.headerRows + ' rows)' : '') + '</dd>' +
       '<dt>Product rows detected</dt><dd>' + r.detected + (r.blank ? ' (+ ' + r.blank + ' blank rows skipped)' : '') + '</dd><dt>Valid products imported</dt><dd>' + r.imported + ' (' + (r.mode === 'replace' ? 'replaced the previous rows' : 'added to existing rows') + ')</dd>' +
       '<dt>Skipped / invalid rows</dt><dd>' + (r.skipped.length ? '<ul>' + r.skipped.slice(0, 60).map((x) => '<li>Excel row ' + x.line + ': ' + esc(x.why) + '</li>').join('') + (r.skipped.length > 60 ? '<li>… and ' + (r.skipped.length - 60) + ' more</li>' : '') + '</ul>' : 'None') + '</dd>' +
       '<dt>Column mapping</dt><dd><ul>' + r.mapping.map((x) => '<li>' + esc(x.field) + ' ← column ' + x.col + ' “' + esc(x.head) + '”' + (x.hidden ? ' (hidden column)' : '') + '</li>').join('') + '</ul></dd>' +
       (r.unmapped.length ? '<dt>Not imported (unmapped columns with data)</dt><dd><ul>' + r.unmapped.map((x) => '<li>Column ' + x.col + ' “' + esc(x.head) + '” (' + x.rows + ' rows)</li>').join('') + '</ul></dd>' : '') +
-      (r.autoNo ? '<dt>Item No.</dt><dd>Numbered automatically 1, 2, 3 … in the table' + (r.fileNo ? '; the ' + r.fileNo + ' Item No. value(s) in the file were not used.' : '.') + '</dd>' : '') +
+      (r.autoNo ? '<dt>Item No.</dt><dd>' + (r.fileNo ? r.fileNo + ' row(s) kept the Item No. / item code from the file; ' : '') + 'blank Item No. cells were numbered automatically 1, 2, 3 … in order. Every Item No. can be edited in the table.</dd>' : '') +
       (r.calc ? '<dt>Calculated</dt><dd>' + r.calc + ' % Increase value(s) were calculated from prices because the workbook had none.</dd>' : '') + (r.notes ? '<dt>Exact-value notes</dt><dd>' + r.notes + ' row(s) used the exact stored Excel value instead of a rounded display value (see the Check column when reviewing).</dd>' : '') +
       (r.changed.length ? '<dt>Document fields updated</dt><dd><ul>' + r.changed.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></dd>' : '') + '</dl>' +
       '<p class="muted" style="font-size:12px">Nothing is saved yet — review the table and press Save Draft.</p><div class="foot"><button class="btn primary" id="rpClose">OK</button></div>');
@@ -743,7 +742,7 @@
   }
   (async function boot() {
     try { await loadApp(); }
-    catch (e) { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:30px;color:#c0182b"><b>' + esc(e.message) + '</b></p>'); }
+    catch (e) { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:30px;color:var(--err)"><b>' + esc(e.message) + '</b></p>'); }
   })();
   window.__GMPI = { S, openNew, refreshPreview }; // for automated tests
 })();

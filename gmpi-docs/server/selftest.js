@@ -42,10 +42,12 @@ let pass = 0; const t = async (n, f) => { try { await f(); pass++; console.log('
     const r = parseUpload(rd('pricelist-with-itemno.xlsx'), 'p.xlsx', 'price-list'); assert.strictEqual(r.headerRow, 2);
     assert.deepStrictEqual(Object.values(r.mapping), ['itemNo', 'itemDescription', 'packaging', 'genericName', 'srp', 'discount', 'tradePrice', 'barcode']); assert.strictEqual(r.mapping[3], undefined);
   });
-  await t('Item No. is numbered 1,2,3… automatically (blank rows skipped, order kept, stored on save)', () => {
+  await t('Item No. is editable: typed codes kept, blank cells numbered 1,2,3… in order (blank rows skipped)', () => {
     const d = G.newDocData('price-list', 'x'), mk = (v) => Object.assign(G.emptyProduct('price-list'), v ? { itemDescription: v } : {});
     d.products = [mk('A'), mk(''), mk('B'), mk('C')]; d.products[0].itemNo = 'TI-9'; const n = G.normalize('price-list', d);
-    assert.deepStrictEqual(n.products.map((p) => p.itemNo), ['1', '', '2', '3']); assert.deepStrictEqual(G.buildLayout('price-list', d).rows.map((r) => r.itemNo), ['1', '2', '3']);
+    assert.deepStrictEqual(n.products.map((p) => p.itemNo), ['TI-9', '', '2', '3']); assert.deepStrictEqual(G.buildLayout('price-list', d).rows.map((r) => r.itemNo), ['TI-9', '2', '3']);
+    const e = G.newDocData('price-list', 'x'); e.products = [mk('A'), mk('B'), mk('C')]; const en = G.normalize('price-list', e);
+    assert.deepStrictEqual(en.products.map((p) => p.itemNo), ['1', '2', '3']); assert.deepStrictEqual(G.buildLayout('price-list', e).rows.map((r) => r.itemNo), ['1', '2', '3']);
   });
   await t('drafts saved with the old table (Packing, no Item No.) open in the new layout', () => {
     const old = { columns: [{ key: 'itemDescription', label: 'Item Description', width: 1350 }, { key: 'packaging', label: 'Packaging', width: 1710 }, { key: 'packing', label: 'Packing', width: 900 }], products: [{ itemDescription: 'TI-1', packaging: 'P', packing: '30s', srp: '1,000.00' }] };

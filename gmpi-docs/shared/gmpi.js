@@ -22,7 +22,7 @@
       fileStem: 'Official Price List',
       // Column headers/widths/alignments copied from SANTE BARLEY.docx
       columns: [
-        { key: 'itemNo', label: 'Item No.', width: 600, align: 'center', auto: true }, // numbered 1, 2, 3… automatically
+        { key: 'itemNo', label: 'Item No.', width: 600, align: 'center', auto: true }, // editable item code; blank cells numbered 1, 2, 3… automatically
         { key: 'itemDescription', label: 'Item Description', width: 1500, align: 'left' },
         { key: 'packaging', label: 'Packaging', width: 1900, align: 'center' },
         { key: 'genericName', label: 'GENERIC NAME', width: 1500, align: 'left' },
@@ -183,7 +183,7 @@
       (t.extraFields || []).forEach((f) => (o[f.key] = cleanText(p && p[f.key])));
       return o;
     });
-    // automatic numbering: 1, 2, 3 … over the non-blank product rows (blank rows get no number)
+    // Item No.: keep typed codes, number only the blank cells 1, 2, 3 … over non-blank product rows
     renumber(type, d.products);
     d.importLog = (Array.isArray(d.importLog) ? d.importLog : []).slice(-50).map((x) => ({ hash: str(x && x.hash), name: cleanText(x && x.name), sheet: cleanText(x && x.sheet), at: str(x && x.at), imported: Number(x && x.imported) || 0 }));
     let sg = Array.isArray(d.signatories) ? d.signatories : [];
@@ -204,12 +204,17 @@
     return d;
   }
 
-  /** Fills every `auto` column (Item No.) with 1, 2, 3 … in row order; blank rows stay empty. Mutates and returns rows. */
+  /** Item No. is editable: a typed code/number is kept as-is; only blank cells on a
+   *  non-blank product row are filled with 1, 2, 3 … in row order. Blank rows stay empty. */
   function renumber(type, rows) {
     const auto = DOC_TYPES[type].columns.filter((c) => c.auto);
     if (!auto.length) return rows;
     let n = 0;
-    rows.forEach((r) => { const blank = isBlankRow(type, r); if (!blank) n++; auto.forEach((c) => (r[c.key] = blank ? '' : String(n))); });
+    rows.forEach((r) => {
+      const blank = isBlankRow(type, r);
+      if (!blank) n++;
+      auto.forEach((c) => { if (blank) r[c.key] = ''; else if (str(r[c.key]).trim() === '') r[c.key] = String(n); });
+    });
     return rows;
   }
 
@@ -339,7 +344,7 @@
   /** All fields a column can be mapped to (table columns + hidden extras). */
   function importFields(type) {
     const t = DOC_TYPES[type];
-    return t.columns.map((c) => ({ key: c.key, label: c.label + (c.auto ? ' (numbered automatically)' : '') })).concat((t.extraFields || []).map((f) => ({ key: f.key, label: f.label + ' (document field)' })));
+    return t.columns.map((c) => ({ key: c.key, label: c.label + (c.auto ? ' (editable; blank = auto-numbered)' : '') })).concat((t.extraFields || []).map((f) => ({ key: f.key, label: f.label + ' (document field)' })));
   }
   function fieldLabel(type, key) { const f = importFields(type).find((x) => x.key === key); return f ? f.label : key; }
 
