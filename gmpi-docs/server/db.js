@@ -71,6 +71,16 @@ function typeCast(c, from, to) {
   if (TYPE_OK.TEXT.includes(from)) return `CASE WHEN ${c}::text ~ '^(-|)[0-9]+$' THEN (${c}::text)::integer ELSE 0 END`;
   return `${c}::integer`;
 }
+function zeroDefault(ty) {
+  if (TYPE_OK.INTEGER.includes(ty) || ['numeric', 'real', 'double precision'].includes(ty)) return '0';
+  if (ty === 'boolean') return 'false';
+  if (ty === 'bytea') return "''";
+  if (ty === 'json' || ty === 'jsonb') return "'{}'";
+  if (ty === 'uuid') return 'gen_random_uuid()';
+  if (/timestamp/.test(ty)) return 'CURRENT_TIMESTAMP';
+  if (ty === 'date') return 'CURRENT_DATE';
+  return "''";
+}
 async function reconcileSchema(db) {
   if (db.kind !== 'postgres') return;
   let changed = false;
@@ -92,6 +102,14 @@ async function reconcileSchema(db) {
         changed = true;
       } else if (keepDefault && cur.column_default == null) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} SET DEFAULT ${backfill}`);
       else if (!keepDefault && /nextval/i.test(cur.column_default || '')) await db.run(`ALTER TABLE ${t} ALTER COLUMN ${c} DROP DEFAULT`);
+    }
+    // Foreign NOT NULL columns the app never writes (e.g. a legacy password_hash) would break every
+    // INSERT that omits them; give them a zero default so inserts succeed, keeping existing values.
+    for (const r of await db.query("SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ? AND is_nullable = 'NO' AND column_default IS NULL", [t])) {
+      if (cols.some(([c]) => c === r.column_name)) continue;
+      await db.run(`ALTER TABLE ${t} ALTER COLUMN ${r.column_name} SET DEFAULT ${zeroDefault(r.data_type)}`);
+      console.log(`Database repair: ${t}.${r.column_name} is a foreign NOT NULL column; set a default so app inserts succeed (values kept).`);
+      changed = true;
     }
   }
   if (changed) await db.run('DELETE FROM sessions WHERE user_id NOT IN (SELECT id FROM users)');
