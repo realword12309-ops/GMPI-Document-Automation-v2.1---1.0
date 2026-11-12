@@ -35,9 +35,231 @@
 
   <!-- HOME -->
   <main id="viewHome" class="view">
-    <h1>Select a document type</h1>
-    <p class="muted">Enter or import the data once, review the live preview, then download Word / PDF or print.</p>
-    <div class="cards" id="typeCards"></div>
+    <div class="home-split">
+      <div class="home-left">
+        <h1>Select a document type</h1>
+        <p class="muted">Enter or import the data once, review the live preview, then download Word / PDF or print.</p>
+        <div class="cards" id="typeCards"></div>
+      </div>
+      <div class="home-right">
+        <div class="pp-scene" id="ppScene" role="img" aria-label="Two Majesty Pharma employees in dark red polo shirts playing table tennis">
+          <div class="pp-tilt" id="ppTilt">
+            <svg class="pp-svg" viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="ppStage" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#2b1114"/><stop offset=".5" stop-color="#170d10"/><stop offset="1" stop-color="#0c090a"/>
+                </linearGradient>
+                <radialGradient id="ppSpot" cx=".5" cy="0" r="1">
+                  <stop offset="0" stop-color="#ffe9c9" stop-opacity=".28"/><stop offset=".45" stop-color="#e11d2e" stop-opacity=".10"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="ppFloor" cx=".5" cy=".5" r=".5">
+                  <stop offset="0" stop-color="#3a2023" stop-opacity=".9"/><stop offset=".7" stop-color="#241416" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="ppShadow" cx=".5" cy=".5" r=".5">
+                  <stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="ppBallGlow" cx=".5" cy=".5" r=".5">
+                  <stop offset="0" stop-color="#fff6d8" stop-opacity=".5"/><stop offset=".5" stop-color="#e6be6a" stop-opacity=".16"/><stop offset="1" stop-color="#e6be6a" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="ppRim" cx=".5" cy=".5" r=".5">
+                  <stop offset="0" stop-color="#e11d2e" stop-opacity=".2"/><stop offset=".6" stop-color="#9e0b14" stop-opacity=".09"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="ppTableTop" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#a00d16"/><stop offset=".55" stop-color="#7c0910"/><stop offset="1" stop-color="#5a060c"/>
+                </linearGradient>
+                <linearGradient id="ppTableSide" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#40050b"/><stop offset="1" stop-color="#1d0206"/>
+                </linearGradient>
+                <linearGradient id="ppGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f8e7a0"/><stop offset=".4" stop-color="#e6be6a"/><stop offset=".75" stop-color="#b8964a"/><stop offset="1" stop-color="#8a6a2c"/>
+                </linearGradient>
+                <linearGradient id="ppPolo" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#e11d2e"/><stop offset=".5" stop-color="#9e0b14"/><stop offset="1" stop-color="#6d070d"/>
+                </linearGradient>
+                <linearGradient id="ppPoloDark" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#9e0b14"/><stop offset="1" stop-color="#560509"/>
+                </linearGradient>
+                <radialGradient id="ppSkin" cx=".35" cy=".3" r=".95">
+                  <stop offset="0" stop-color="#ffdcbd"/><stop offset=".55" stop-color="#eeb289"/><stop offset="1" stop-color="#c9805a"/>
+                </radialGradient>
+                <linearGradient id="ppHair" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#33333b"/><stop offset="1" stop-color="#0e0e12"/>
+                </linearGradient>
+                <linearGradient id="ppTrouser" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#2b2b33"/><stop offset="1" stop-color="#101014"/>
+                </linearGradient>
+                <linearGradient id="ppShoe" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9c2b2"/>
+                </linearGradient>
+                <radialGradient id="ppBall" cx=".35" cy=".3" r=".95">
+                  <stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#f4f1e8"/><stop offset="1" stop-color="#c6c0b0"/>
+                </radialGradient>
+                <radialGradient id="ppPaddle" cx=".4" cy=".35" r=".9">
+                  <stop offset="0" stop-color="#e11d2e"/><stop offset=".7" stop-color="#9e0b14"/><stop offset="1" stop-color="#6d070d"/>
+                </radialGradient>
+                <linearGradient id="ppWood" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#e0aa66"/><stop offset="1" stop-color="#9c6a2c"/>
+                </linearGradient>
+                <pattern id="ppNet" width="7" height="7" patternUnits="userSpaceOnUse">
+                  <rect width="7" height="7" fill="#0d0a0b" fill-opacity=".55"/>
+                  <path d="M0 0H7M0 0V7" stroke="#f4f1e8" stroke-opacity=".5" stroke-width="1"/>
+                </pattern>
+                <g id="ppBody">
+                  <!-- back leg -->
+                  <path d="M44 168 q-6 40 -4 78 l16 2 q4 -40 6 -76 z" fill="url(#ppTrouser)"/>
+                  <path d="M38 244 q-4 10 2 14 l20 0 q4 -6 -2 -12 z" fill="url(#ppShoe)"/>
+                  <!-- front leg -->
+                  <path d="M70 168 q8 40 6 80 l16 0 q2 -42 -4 -80 z" fill="url(#ppTrouser)"/>
+                  <path d="M74 246 q-2 10 4 14 l22 0 q4 -6 -2 -12 z" fill="url(#ppShoe)"/>
+                  <!-- torso polo -->
+                  <path d="M34 78 q26 -12 52 0 q10 34 6 92 q-32 10 -64 0 q-4 -58 6 -92 z" fill="url(#ppPolo)"/>
+                  <path d="M34 78 q26 -12 52 0 q3 12 4 24 q-30 8 -60 0 q1 -12 4 -24 z" fill="#ffffff" fill-opacity=".06"/>
+                  <!-- collar -->
+                  <path d="M48 74 l12 12 l12 -12 q-12 -8 -24 0 z" fill="#560509"/>
+                  <path d="M48 74 l12 12 l-4 -14 z" fill="#7a0810"/>
+                  <path d="M72 74 l-12 12 l4 -14 z" fill="#7a0810"/>
+                  <!-- chest logo: gold crown -->
+                  <g transform="translate(70,102) scale(.9)">
+                    <path d="M0 8 L3 0 L6 5 L9 0 L12 8 L12 11 L0 11 Z" fill="url(#ppGold)"/>
+                    <rect x="0" y="12" width="12" height="2" rx="1" fill="url(#ppGold)"/>
+                  </g>
+                  <!-- neck -->
+                  <path d="M52 62 h16 v14 h-16 z" fill="url(#ppSkin)"/>
+                  <!-- head -->
+                  <circle cx="60" cy="38" r="27" fill="url(#ppSkin)"/>
+                  <!-- ear -->
+                  <circle cx="35" cy="40" r="5" fill="url(#ppSkin)"/>
+                  <!-- hair -->
+                  <path d="M33 34 q2 -26 27 -26 q25 0 27 26 q-6 -12 -14 -13 q-4 6 -13 6 q-16 0 -27 7 z" fill="url(#ppHair)"/>
+                  <!-- face -->
+                  <circle cx="52" cy="40" r="2.6" fill="#20140c"/>
+                  <circle cx="68" cy="40" r="2.6" fill="#20140c"/>
+                  <circle cx="53" cy="39" r=".9" fill="#fff"/>
+                  <circle cx="69" cy="39" r=".9" fill="#fff"/>
+                  <path d="M48 33 q4 -3 8 -1" stroke="#20140c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                  <path d="M64 32 q4 -2 8 1" stroke="#20140c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                  <path d="M52 50 q8 6 16 0" stroke="#a4552f" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                  <path d="M59 42 q2 4 -1 6" stroke="#c9805a" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+                </g>
+                <g id="ppPaddleShape">
+                  <rect x="-4" y="16" width="8" height="26" rx="4" fill="url(#ppWood)"/>
+                  <ellipse cx="0" cy="0" rx="20" ry="23" fill="url(#ppGold)"/>
+                  <ellipse cx="0" cy="0" rx="17" ry="20" fill="url(#ppPaddle)"/>
+                  <ellipse cx="-5" cy="-6" rx="7" ry="9" fill="#ffffff" fill-opacity=".14"/>
+                </g>
+              </defs>
+
+              <!-- stage -->
+              <rect x="14" y="14" width="932" height="592" rx="30" fill="url(#ppStage)"/>
+              <rect x="14" y="14" width="932" height="592" rx="30" fill="none" stroke="url(#ppGold)" stroke-opacity=".5" stroke-width="1.5"/>
+              <rect x="14" y="14" width="932" height="592" rx="30" fill="url(#ppSpot)"/>
+              <!-- spotlight cone -->
+              <path class="pp-cone" d="M480 40 L250 470 L710 470 Z" fill="url(#ppSpot)"/>
+              <!-- floor -->
+              <ellipse cx="480" cy="520" rx="400" ry="66" fill="url(#ppFloor)"/>
+
+              <!-- floating particles -->
+              <g class="pp-particles">
+                <circle class="pp-p p1" cx="150" cy="470" r="4" fill="#e11d2e"/>
+                <circle class="pp-p p2" cx="260" cy="500" r="3" fill="#e6be6a"/>
+                <circle class="pp-p p3" cx="380" cy="480" r="5" fill="#e11d2e"/>
+                <circle class="pp-p p4" cx="560" cy="500" r="3" fill="#e6be6a"/>
+                <circle class="pp-p p5" cx="680" cy="470" r="4" fill="#e11d2e"/>
+                <circle class="pp-p p6" cx="800" cy="495" r="3" fill="#e6be6a"/>
+                <circle class="pp-p p7" cx="480" cy="510" r="4" fill="#e6be6a"/>
+                <circle class="pp-p p8" cx="860" cy="460" r="3" fill="#e11d2e"/>
+              </g>
+
+              <!-- contact shadows -->
+              <ellipse cx="180" cy="520" rx="80" ry="18" fill="url(#ppShadow)"/>
+              <ellipse cx="780" cy="520" rx="80" ry="18" fill="url(#ppShadow)"/>
+              <ellipse cx="480" cy="540" rx="250" ry="26" fill="url(#ppShadow)"/>
+
+              <!-- rim light behind players -->
+              <ellipse cx="185" cy="300" rx="95" ry="150" fill="url(#ppRim)"/>
+              <ellipse cx="775" cy="300" rx="95" ry="150" fill="url(#ppRim)"/>
+
+              <!-- table -->
+              <g class="pp-table">
+                <path d="M320 452 l12 62 h14 l-8 -62 z" fill="#141419"/>
+                <path d="M628 452 l-8 62 h14 l12 -62 z" fill="#141419"/>
+                <path d="M262 452 l-10 78 h16 l12 -78 z" fill="url(#ppTrouser)"/>
+                <path d="M698 452 l10 78 h-16 l-12 -78 z" fill="url(#ppTrouser)"/>
+                <path d="M240 450 L720 450 L720 470 L240 470 Z" fill="url(#ppTableSide)"/>
+                <path d="M300 340 L660 340 L720 450 L240 450 Z" fill="url(#ppTableTop)"/>
+                <path d="M300 340 L660 340 L720 450 L240 450 Z" fill="none" stroke="#f4f1e8" stroke-opacity=".85" stroke-width="3"/>
+                <path d="M285 395 L675 395" stroke="#f4f1e8" stroke-opacity=".5" stroke-width="2"/>
+                <path d="M300 340 L660 340 L668 356 L292 356 Z" fill="#ffffff" fill-opacity=".07"/>
+                <!-- net -->
+                <g class="pp-net">
+                  <path d="M455 268 L505 268 L505 392 L455 392 Z" fill="url(#ppNet)"/>
+                  <rect x="452" y="264" width="56" height="7" rx="3" fill="url(#ppGold)"/>
+                  <rect x="478" y="271" width="4" height="121" fill="#f4f1e8" fill-opacity=".7"/>
+                  <path d="M455 392 L505 392" stroke="#0d0a0b" stroke-width="3"/>
+                </g>
+              </g>
+
+              <!-- ball shadow on table -->
+              <ellipse class="pp-ball-shadow" cx="250" cy="400" rx="16" ry="5" fill="url(#ppShadow)"/>
+
+              <!-- LEFT player -->
+              <g transform="translate(120,150)">
+                <g class="pp-bob bob-a">
+                  <g class="pp-arm-back">
+                    <path d="M40 92 q-22 16 -20 44 l12 4 q6 -24 20 -34 z" fill="url(#ppPoloDark)"/>
+                    <circle cx="22" cy="140" r="8" fill="url(#ppSkin)"/>
+                  </g>
+                  <use href="#ppBody"/>
+                  <g class="pp-arm-front swing-l">
+                    <path d="M84 92 q34 12 52 40 l-10 12 q-24 -22 -48 -30 z" fill="url(#ppPolo)"/>
+                    <circle cx="136" cy="140" r="9" fill="url(#ppSkin)"/>
+                    <g transform="translate(150,150) rotate(-18)"><use href="#ppPaddleShape"/></g>
+                  </g>
+                </g>
+              </g>
+
+              <!-- RIGHT player (mirrored) -->
+              <g transform="translate(840,150) scale(-1,1)">
+                <g class="pp-bob bob-b">
+                  <g class="pp-arm-back">
+                    <path d="M40 92 q-22 16 -20 44 l12 4 q6 -24 20 -34 z" fill="url(#ppPoloDark)"/>
+                    <circle cx="22" cy="140" r="8" fill="url(#ppSkin)"/>
+                  </g>
+                  <use href="#ppBody"/>
+                  <g class="pp-arm-front swing-r">
+                    <path d="M84 92 q34 4 50 26 l-8 14 q-26 -16 -50 -20 z" fill="url(#ppPolo)"/>
+                    <circle cx="134" cy="126" r="9" fill="url(#ppSkin)"/>
+                    <g transform="translate(148,116) rotate(24)"><use href="#ppPaddleShape"/></g>
+                  </g>
+                </g>
+              </g>
+
+              <!-- ball -->
+              <g class="pp-ball-x">
+                <g class="pp-ball-y">
+                  <circle cx="250" cy="330" r="17" fill="url(#ppBallGlow)"/>
+                  <circle cx="250" cy="330" r="9" fill="url(#ppBall)"/>
+                  <circle cx="247" cy="327" r="3" fill="#ffffff"/>
+                </g>
+              </g>
+              <!-- ball trail -->
+              <g class="pp-ball-x trail">
+                <g class="pp-ball-y">
+                  <circle cx="236" cy="330" r="6" fill="#e6be6a" fill-opacity=".25"/>
+                  <circle cx="224" cy="330" r="4" fill="#e11d2e" fill-opacity=".18"/>
+                </g>
+              </g>
+
+              <!-- caption -->
+              <g class="pp-caption">
+                <rect x="330" y="560" width="300" height="34" rx="17" fill="#0d0a0b" fill-opacity=".55" stroke="url(#ppGold)" stroke-opacity=".4"/>
+                <text x="480" y="582" text-anchor="middle" fill="#e6be6a" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="2">MAJESTY PHARMA &#183; TEAM SPIRIT</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- HISTORY -->
@@ -86,5 +308,6 @@
 
 <script src="/shared/gmpi.js"></script>
 <script src="/app.js"></script>
+<script src="/scene.js"></script>
 </body>
 </html>

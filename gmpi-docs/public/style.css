@@ -324,6 +324,73 @@ table.sigt .tt{font-weight:400;font-size:9pt;color:#555;display:block}
 }
 
 /* =====================================================================================================================
+   HOME: two-column split (document cards left, animated Majesty Pharma table-tennis scene right).
+   The scene is a self-contained inline SVG animated with GPU-friendly transform/opacity only (no JS required,
+   no filters, no external libs) so it stays lightweight. It lives inside .app-ui, so it never prints.
+   ===================================================================================================================== */
+.home-split{display:grid;grid-template-columns:minmax(340px,470px) minmax(0,1fr);gap:30px;align-items:start;margin-top:6px}
+.home-left{min-width:0}
+.home-left .cards{grid-template-columns:1fr;margin-top:18px}
+.home-right{min-width:0}
+.pp-scene{perspective:1200px;position:relative}
+.pp-tilt{transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .3s ease-out;transform-style:preserve-3d;will-change:transform}
+.pp-svg{display:block;width:100%;height:auto;animation:ppDrift 14s ease-in-out infinite}
+
+/* rally timeline: one shared period keeps ball, paddles and bodies in sync */
+.pp-svg{--ppT:3.6s}
+.pp-ball-x{animation:ppBallX var(--ppT) linear infinite}
+.pp-ball-y{animation:ppBallY var(--ppT) infinite}
+.pp-ball-x.trail{opacity:.7}
+.pp-ball-shadow{transform-box:fill-box;transform-origin:center;animation:ppBallShadow var(--ppT) linear infinite}
+.pp-arm-front{transform-box:fill-box;transform-origin:12% 12%}
+.swing-l{animation:ppSwingL var(--ppT) ease-in-out infinite}
+.swing-r{animation:ppSwingR var(--ppT) ease-in-out infinite}
+.pp-bob{animation:ppBob calc(var(--ppT)/2) ease-in-out infinite}
+.bob-b{animation-delay:calc(var(--ppT)/4)}
+.pp-cone{animation:ppCone 5s ease-in-out infinite}
+.pp-p{animation:ppFloat 8s linear infinite}
+.pp-p.p1{animation-duration:7s;animation-delay:0s}
+.pp-p.p2{animation-duration:9s;animation-delay:1.2s}
+.pp-p.p3{animation-duration:8s;animation-delay:2.1s}
+.pp-p.p4{animation-duration:10s;animation-delay:.6s}
+.pp-p.p5{animation-duration:7.5s;animation-delay:3s}
+.pp-p.p6{animation-duration:9.5s;animation-delay:1.8s}
+.pp-p.p7{animation-duration:8.5s;animation-delay:4s}
+.pp-p.p8{animation-duration:10.5s;animation-delay:2.6s}
+.pp-caption{animation:fade 1s .3s ease both}
+
+@keyframes ppDrift{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(.4deg)}}
+@keyframes ppBallX{0%{transform:translateX(0)}50%{transform:translateX(460px)}100%{transform:translateX(0)}}
+@keyframes ppBallY{
+  0%{transform:translateY(0);animation-timing-function:ease-out}
+  25%{transform:translateY(-95px);animation-timing-function:ease-in}
+  50%{transform:translateY(0);animation-timing-function:ease-out}
+  75%{transform:translateY(-95px);animation-timing-function:ease-in}
+  100%{transform:translateY(0)}
+}
+@keyframes ppBallShadow{
+  0%{transform:translateX(0) scale(1);opacity:.5}
+  25%{transform:translateX(230px) scale(.55);opacity:.16}
+  50%{transform:translateX(460px) scale(1);opacity:.5}
+  75%{transform:translateX(230px) scale(.55);opacity:.16}
+  100%{transform:translateX(0) scale(1);opacity:.5}
+}
+@keyframes ppSwingL{0%{transform:rotate(-14deg)}12%{transform:rotate(16deg)}45%{transform:rotate(2deg)}88%{transform:rotate(-6deg)}100%{transform:rotate(-14deg)}}
+@keyframes ppSwingR{0%{transform:rotate(6deg)}38%{transform:rotate(10deg)}50%{transform:rotate(-16deg)}62%{transform:rotate(14deg)}100%{transform:rotate(6deg)}}
+@keyframes ppBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ppCone{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes ppFloat{0%{transform:translateY(0);opacity:0}12%{opacity:.75}88%{opacity:.35}100%{transform:translateY(-400px);opacity:0}}
+
+@media screen and (max-width:900px){
+  .home-split{grid-template-columns:1fr;gap:22px}
+  .home-right{order:2}
+  .pp-scene{max-width:600px;margin:0 auto}
+}
+@media screen and (max-width:480px){
+  .pp-scene{max-width:100%}
+}
+
+/* =====================================================================================================================
    RESPONSIVE (tablets / phones). Screens wider than 900px keep the original desktop layout exactly.
    Only the app screens (menus, forms, tables, dialogs) are adjusted here. The document itself (.sheet, table.prod, the
    print rules above) is NEVER restyled: the Official Price List / Notice look the same everywhere; the live preview is
