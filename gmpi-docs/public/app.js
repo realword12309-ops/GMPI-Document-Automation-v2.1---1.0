@@ -49,9 +49,10 @@
 
   // ------------------------------------------------------------ views
   function show(view) {
-    ['Login', 'Home', 'History', 'Editor'].forEach((v) => ($('#view' + v).hidden = v.toLowerCase() !== view));
+    ['Login', 'Home', 'History', 'Analytics', 'Editor'].forEach((v) => ($('#view' + v).hidden = v.toLowerCase() !== view));
     $$('.nav-btn').forEach((b) => b.classList.toggle('on', b.dataset.nav === view));
     if (view === 'history') loadHistory();
+    if (view === 'analytics') loadAnalytics();
   }
   async function guardLeave() { return !S.dirty || $('#viewEditor').hidden || (await confirmBox('You have unsaved changes. Leave without saving?', 'Leave', 'Stay')); }
   $$('.nav-btn').forEach((b) => (b.onclick = async () => { if (await guardLeave()) { S.dirty = false; show(b.dataset.nav); } }));
@@ -485,8 +486,8 @@
       const r = await (await api('/api/docs?' + qs)).json(), list = r.items;
       const st = S.cfg.storage;
       $('#historyNote').textContent = st ? (st.engine === 'postgres' ? 'Stored in the online PostgreSQL database.' : 'Stored in the database on the computer running the server (' + st.location + ').') + ' Every save keeps a version; every generated Word/PDF is kept.' : '';
-      host.innerHTML = list.length ? '<table class="hist"><thead><tr><th>Ref no.</th><th>Customer / title</th><th>Type</th><th>Rows</th><th>Last saved</th><th>Status</th><th></th></tr></thead><tbody>' + list.map((d) =>
-        '<tr><td>' + esc(d.refNo) + '</td><td><b>' + esc(d.title) + '</b></td><td>' + esc((G.DOC_TYPES[d.type] || {}).name || d.type) + '</td><td>' + d.rows + '</td><td>' + new Date(d.updatedAt).toLocaleString() + '<br><span class="muted">v' + d.revision + ' · ' + esc(d.updatedBy) + '</span></td><td>' + (d.exports ? 'Exported (' + d.exports + ' file' + (d.exports > 1 ? 's' : '') + ')' : 'Draft') + '</td>' +
+      host.innerHTML = list.length ? '<table class="hist"><thead><tr><th>Ref no.</th><th>Customer / title</th><th>Type</th><th>Rows</th><th>Started / last saved</th><th>Status</th><th></th></tr></thead><tbody>' + list.map((d) =>
+        '<tr><td>' + esc(d.refNo) + '</td><td><b>' + esc(d.title) + '</b></td><td>' + esc((G.DOC_TYPES[d.type] || {}).name || d.type) + '</td><td>' + d.rows + '</td><td><span class="muted">Started:</span> ' + new Date(d.createdAt).toLocaleString() + '<br><span class="muted">Last saved:</span> ' + new Date(d.updatedAt).toLocaleString() + '<br><span class="muted">v' + d.revision + ' · ' + esc(d.updatedBy) + '</span></td><td>' + (d.exports ? 'Exported (' + d.exports + ' file' + (d.exports > 1 ? 's' : '') + ')' : 'Draft') + '</td>' +
         '<td style="white-space:nowrap"><button class="btn small" data-o="' + d.id + '">Open / edit</button> <button class="btn small" data-v="' + d.id + '">Versions &amp; files</button>' + (canEdit() ? ' <button class="btn small" data-c="' + d.id + '">Duplicate</button> <button class="btn small danger-ghost" data-x="' + d.id + '">Delete</button>' : '') + '</td></tr>').join('') + '</tbody></table>' +
         '<div class="pager">' + r.total + ' document(s) ' + (H.page > 0 ? '<button class="btn small" id="hPrev">‹ Newer</button>' : '') + ((H.page + 1) * H_PAGE < r.total ? '<button class="btn small" id="hNext">Older ›</button>' : '') + '</div>'
         : '<p>' + (H.q || H.type || H.status ? 'No documents match your search.' : 'No saved documents yet. Create a document and press <b>Save Draft</b>.') + '</p>';
@@ -495,6 +496,63 @@
       $$('[data-c]', host).forEach((b) => (b.onclick = async () => { try { await api('/api/docs/' + b.dataset.c + '/duplicate', { method: 'POST' }); loadHistory(); } catch (e) { toast(e.message, true); } }));
       $$('[data-x]', host).forEach((b) => (b.onclick = async () => { if (await confirmBox('Delete this saved document, its saved versions and its generated files permanently?', 'Delete')) { try { await api('/api/docs/' + b.dataset.x, { method: 'DELETE' }); loadHistory(); } catch (e) { toast(e.message, true); } } }));
       const pv = $('#hPrev'), nx = $('#hNext'); if (pv) pv.onclick = () => { H.page--; loadHistory(); }; if (nx) nx.onclick = () => { H.page++; loadHistory(); };
+    } catch (e) { host.innerHTML = '<p style="color:var(--err)">' + esc(e.message) + '</p>'; }
+  }
+  const A = { period: 'week' };
+  function anDt(v) { return v ? new Date(v).toLocaleString() : '—'; }
+  function anPct(v) {
+    if (v == null || !isFinite(v)) return '<span class="muted">—</span>';
+    const cls = v > 0 ? 'up' : v < 0 ? 'down' : 'flat';
+    return '<span class="pct ' + cls + '">' + (v > 0 ? '+' : '') + v.toFixed(2) + '%</span>';
+  }
+  function anCard(label, value, sub) { return '<div class="an-card"><div class="an-value">' + value + '</div><div class="an-label">' + label + '</div><div class="muted an-sub">' + sub + '</div></div>'; }
+  function anBar(v, scale, tone) { if (v == null || !isFinite(v)) return ''; const w = Math.max(4, Math.min(100, Math.abs(v) / scale * 100)); return '<span class="pctbar"><i class="' + tone + '" style="width:' + w.toFixed(1) + '%"></i></span>'; }
+  function anChart(title, sub, entries, scale) {
+    if (!entries.length) return '';
+    const pal = ['#E11D2E', '#E6BE6A', '#F5A524', '#FF5566', '#B8964A', '#EFE7E4'];
+    const max = Math.max(scale || 1, ...entries.map((e) => Math.abs(e.value || 0)));
+    return '<section class="an-panel an-chart"><header class="an-head"><div><b>' + title + '</b><div class="muted an-times">' + sub + '</div></div></header>' +
+      entries.map((e, i) => '<div class="bar-row"><span class="bar-label" title="' + esc(e.label) + '">' + esc(e.label) + '</span><span class="bar-track"><i style="width:' + (Math.abs(e.value || 0) / max * 100).toFixed(1) + '%;background:' + pal[i % pal.length] + '"></i></span><span class="bar-val">' + (e.value == null ? '—' : (e.value > 0 ? '+' : '') + e.value.toFixed(2) + '%') + '</span></div>').join('') +
+      '</section>';
+  }
+  async function loadAnalytics() {
+    const bar = $('#anBar'), host = $('#anBody');
+    if (!bar.dataset.ready) {
+      bar.dataset.ready = '1';
+      bar.innerHTML = '<div class="an-seg">' + [['week', 'This week'], ['month', 'This month'], ['all', 'All time']].map((p) => '<button class="an-seg-btn" data-p="' + p[0] + '">' + p[1] + '</button>').join('') + '</div><span class="muted" id="anRange"></span>';
+      $$('.an-seg-btn', bar).forEach((b) => (b.onclick = () => { A.period = b.dataset.p; loadAnalytics(); }));
+    }
+    $$('.an-seg-btn', bar).forEach((b) => b.classList.toggle('on', b.dataset.p === A.period));
+    host.innerHTML = '<p class="muted">Loading…</p>';
+    try {
+      const r = await (await api('/api/analytics?period=' + A.period)).json();
+      $('#anRange').textContent = r.range.start ? ('Since ' + new Date(r.range.start).toLocaleString()) : 'All documents';
+      const c = r.counts;
+      let html = '<div class="an-cards">' +
+        anCard('Price Increase Notices', c.priceIncrease, 'in period') +
+        anCard('Official Price Lists', c.priceList, 'in period') +
+        anCard('Total documents', c.total, 'in period') +
+        anCard('Avg % increase', r.avgIncrease == null ? '—' : (r.avgIncrease > 0 ? '+' : '') + r.avgIncrease.toFixed(2) + '%', 'across products') + '</div>';
+      html += '<div class="an-charts">' +
+        anChart('Avg % increase per notice', 'Price Increase Notices in period', r.priceIncrease.map((d) => ({ label: d.refNo + ' · ' + (d.customer || d.title || ''), value: d.avgPercent })), 10) +
+        anChart('Avg discount per customer', 'Official Price Lists in period', r.customers.map((g) => ({ label: g.customer, value: g.avgDiscount })), 10) + '</div>';
+      html += '<h2 class="an-h">Price Increase analysis <span class="muted">old → new price and % increase per product</span></h2>';
+      html += r.priceIncrease.length ? r.priceIncrease.map((d) =>
+        '<section class="an-panel"><header class="an-head"><div><b>' + esc(d.refNo) + '</b> · ' + esc(d.title || d.customer || '') +
+        '<div class="muted an-times">Started ' + anDt(d.createdAt) + ' · Finished ' + anDt(d.updatedAt) + '</div></div>' +
+        '<div class="an-badges">' + (d.avgPercent != null ? '<span class="badge gold">avg ' + (d.avgPercent > 0 ? '+' : '') + d.avgPercent.toFixed(2) + '%</span>' : '') + (d.maxPercent != null ? '<span class="badge">max ' + (d.maxPercent > 0 ? '+' : '') + d.maxPercent.toFixed(2) + '%</span>' : '') + '</div></header>' +
+        (d.rows.length ? '<table class="hist an-table"><thead><tr><th>Product</th><th>Packaging</th><th class="num">Old price</th><th class="num">New price</th><th class="num">% Increase</th></tr></thead><tbody>' +
+          d.rows.map((p) => '<tr><td>' + esc(p.description) + '</td><td>' + esc(p.packaging) + '</td><td class="num">' + esc(p.oldPrice || '—') + '</td><td class="num">' + esc(p.newPrice || '—') + '</td><td class="num"><span class="pctwrap">' + anPct(p.percent) + anBar(p.percent, 30, 'up') + '</span></td></tr>').join('') + '</tbody></table>' : '<p class="muted">No product rows.</p>') +
+        '</section>').join('') : '<p class="muted">No Price Increase Notices in this period.</p>';
+      html += '<h2 class="an-h">Official Price List by customer <span class="muted">products given and discount % per customer</span></h2>';
+      html += r.customers.length ? r.customers.map((g) =>
+        '<section class="an-panel"><header class="an-head"><div><b>' + esc(g.customer) + '</b>' +
+        '<div class="muted an-times">' + g.docCount + ' price list(s) · ' + g.productCount + ' product(s)</div></div>' +
+        '<div class="an-badges">' + (g.avgDiscount != null ? '<span class="badge gold">avg discount ' + g.avgDiscount.toFixed(2) + '%</span>' : '') + '</div></header>' +
+        (g.products.length ? '<table class="hist an-table"><thead><tr><th>Product</th><th>Packaging</th><th class="num">SRP</th><th class="num">Discount</th><th class="num">Trade price</th><th>From</th></tr></thead><tbody>' +
+          g.products.map((p) => '<tr><td>' + esc(p.description) + '</td><td>' + esc(p.packaging) + '</td><td class="num">' + esc(p.srp || '—') + '</td><td class="num"><span class="pctwrap">' + (p.discountVal != null ? '<span class="pct flat">' + p.discountVal.toFixed(2) + '%</span>' + anBar(p.discountVal, 30, 'gold') : esc(p.discount || '—')) + '</span></td><td class="num">' + esc(p.tradePrice || '—') + '</td><td class="muted">' + esc(p.refNo) + '<br>' + anDt(p.createdAt) + '</td></tr>').join('') + '</tbody></table>' : '<p class="muted">No product rows.</p>') +
+        '</section>').join('') : '<p class="muted">No Official Price Lists in this period.</p>';
+      host.innerHTML = html;
     } catch (e) { host.innerHTML = '<p style="color:var(--err)">' + esc(e.message) + '</p>'; }
   }
   $('#btnVersions').onclick = () => S.id && openVersions(S.id);

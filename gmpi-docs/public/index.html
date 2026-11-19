@@ -16,6 +16,7 @@
     <nav>
       <button class="nav-btn" data-nav="home">New document</button>
       <button class="nav-btn" data-nav="history">Saved drafts &amp; history</button>
+      <button class="nav-btn" data-nav="analytics">Analytics</button>
     </nav>
     <div class="storage" id="storageNote"></div>
     <div class="userbox" id="userBox"></div>
@@ -268,6 +269,14 @@
     <p class="muted" id="historyNote"></p>
     <div class="tools" id="historyBar" style="margin:10px 0"></div>
     <div id="historyList"></div>
+  </main>
+
+  <!-- ANALYTICS / PRESENTATION -->
+  <main id="viewAnalytics" class="view" hidden>
+    <h1>Price analytics &amp; presentation</h1>
+    <p class="muted">How many notices and price lists were made in the period, the percentage increase per product, and each customer's price list with the discount given.</p>
+    <div class="tools" id="anBar" style="margin:10px 0"></div>
+    <div id="anBody"></div>
   </main>
 
   <!-- EDITOR -->

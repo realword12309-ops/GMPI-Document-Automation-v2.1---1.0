@@ -390,6 +390,56 @@ table.sigt .tt{font-weight:400;font-size:9pt;color:#555;display:block}
   .pp-scene{max-width:100%}
 }
 
+/* ---- Analytics / presentation ---- */
+#anBar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.an-seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:var(--field)}
+.an-seg-btn{padding:8px 16px;background:transparent;border:0;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;transition:background .16s,color .16s}
+.an-seg-btn + .an-seg-btn{border-left:1px solid var(--line)}
+.an-seg-btn:hover{color:var(--ink);background:rgba(225,29,46,.1)}
+.an-seg-btn.on{background:linear-gradient(180deg,var(--red-bright),var(--red));color:#fff}
+.an-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0 6px}
+.an-card{background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.an-card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--red-bright),var(--gold))}
+.an-value{font-size:30px;font-weight:800;color:var(--gold-bright);line-height:1.1;font-variant-numeric:tabular-nums}
+.an-label{font-weight:700;color:var(--ink);margin-top:4px;font-size:13px}
+.an-sub{font-size:11px;margin-top:2px}
+.an-h{margin:26px 0 10px;font-size:17px;color:var(--ink);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.an-h .muted{font-size:12px;font-weight:400}
+.an-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 14px}
+.an-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.an-head b{color:var(--gold-bright)}
+.an-times{font-size:11px;margin-top:3px}
+.an-badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge.gold{background:rgba(230,190,106,.16);color:var(--gold-bright);border-color:rgba(230,190,106,.4)}
+.an-table{margin:0}
+.an-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.an-table th.num{text-align:right}
+.pct{font-weight:700;font-variant-numeric:tabular-nums}
+.pct.up{color:var(--err)}
+.pct.down{color:var(--ok)}
+.pct.flat{color:var(--gold-bright)}
+.an-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0 6px}
+.an-chart .bar-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+.bar-label{flex:0 0 34%;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:10px;background:var(--field);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.bar-track i{display:block;height:100%;border-radius:6px;transition:width .4s ease}
+.bar-val{flex:0 0 64px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--gold-bright);font-size:12px}
+.pctwrap{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px}
+.pctbar{display:block;width:64px;height:4px;background:var(--field);border-radius:3px;overflow:hidden}
+.pctbar i{display:block;height:100%}
+.pctbar i.up{background:linear-gradient(90deg,var(--red),var(--red-bright))}
+.pctbar i.gold{background:linear-gradient(90deg,var(--gold),var(--gold-bright))}
+@media screen and (max-width:900px){
+  .an-charts{grid-template-columns:1fr}
+  .an-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .an-value{font-size:24px}
+}
+@media screen and (max-width:480px){
+  .an-cards{grid-template-columns:1fr 1fr;gap:10px}
+  .an-card{padding:12px}
+  .an-value{font-size:20px}
+}
+
 /* =====================================================================================================================
    RESPONSIVE (tablets / phones). Screens wider than 900px keep the original desktop layout exactly.
    Only the app screens (menus, forms, tables, dialogs) are adjusted here. The document itself (.sheet, table.prod, the
