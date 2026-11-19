@@ -108,6 +108,59 @@ async function createApp(cfg, log = console.log) {
 
   // ------------------------------------------------------------ documents
   app.get('/api/docs', async (req, res, next) => { try { res.json(await store.list({ q: req.query.q, type: req.query.type, status: req.query.status, limit: req.query.limit, offset: req.query.offset })); } catch (e) { next(e); } });
+  // Read-only presentation aggregates: period counts, per-product price increases, price lists grouped by customer.
+  app.get('/api/analytics', async (req, res, next) => {
+    try {
+      const period = ['week', 'month', 'all'].includes(req.query.period) ? req.query.period : 'week';
+      const now = new Date();
+      let start = null;
+      if (period === 'week') { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); d.setHours(0, 0, 0, 0); start = d; }
+      else if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1); }
+      const params = [];
+      const where = start ? 'WHERE created_at >= ?' : '';
+      if (start) params.push(start.toISOString());
+      const rows = await db.query('SELECT id,type,ref_no,title,customer,status,created_at,updated_at,data FROM docs ' + where + ' ORDER BY created_at DESC', params);
+      const r2 = (x) => Math.round(x * 100) / 100;
+      const mean = (a) => (a.length ? r2(a.reduce((s, v) => s + v, 0) / a.length) : null);
+      const price = (v) => { const p = G.parsePrice(String(v == null ? '' : v)); return p.ok ? p.value : NaN; };
+      const percent = (v) => { const m = String(v == null ? '' : v).match(/-?\d+(?:\.\d+)?/); return m ? parseFloat(m[0]) : NaN; };
+      const pin = [], groups = new Map();
+      let plCount = 0;
+      const allPercents = [];
+      for (const r of rows) {
+        let products = [];
+        try { const d = JSON.parse(r.data || '{}'); products = Array.isArray(d.products) ? d.products : []; } catch (e) { products = []; }
+        const base = { id: r.id, refNo: r.ref_no, title: r.title, customer: r.customer, status: r.status, createdAt: r.created_at, updatedAt: r.updated_at };
+        if (r.type === 'price-increase') {
+          const items = products.filter((p) => !G.isBlankRow('price-increase', p)).map((p) => {
+            const o = price(p.oldPrice), n = price(p.newPrice);
+            const calc = isFinite(o) && o > 0 && isFinite(n) ? r2(((n - o) / o) * 100) : null;
+            const entered = percent(p.percent);
+            const shown = isFinite(entered) ? r2(entered) : calc;
+            if (shown != null) allPercents.push(shown);
+            return { description: p.description || '', packaging: p.packaging || '', oldPrice: p.oldPrice || '', newPrice: p.newPrice || '', percent: shown, calcPercent: calc };
+          });
+          const vals = items.map((i) => i.percent).filter((v) => v != null);
+          pin.push(Object.assign(base, { rows: items, avgPercent: mean(vals), maxPercent: vals.length ? r2(Math.max(...vals)) : null, minPercent: vals.length ? r2(Math.min(...vals)) : null }));
+        } else if (r.type === 'price-list') {
+          plCount++;
+          const name = String(r.customer || '').trim() || '(no customer)';
+          const key = name.toLowerCase();
+          if (!groups.has(key)) groups.set(key, { customer: name, docs: [], products: [], discounts: [] });
+          const g = groups.get(key);
+          g.docs.push({ id: r.id, refNo: r.ref_no, title: r.title, createdAt: r.created_at, updatedAt: r.updated_at });
+          products.filter((p) => !G.isBlankRow('price-list', p)).forEach((p) => {
+            const d = percent(p.discount);
+            g.products.push({ description: p.itemDescription || '', packaging: p.packaging || '', srp: p.srp || '', discount: p.discount || '', discountVal: isFinite(d) ? r2(d) : null, tradePrice: p.tradePrice || '', refNo: r.ref_no, createdAt: r.created_at });
+            if (isFinite(d)) g.discounts.push(r2(d));
+          });
+        }
+      }
+      const customers = [...groups.values()].map((g) => ({ customer: g.customer, docCount: g.docs.length, productCount: g.products.length, avgDiscount: mean(g.discounts), docs: g.docs, products: g.products }))
+        .sort((a, b) => b.productCount - a.productCount || a.customer.localeCompare(b.customer));
+      res.json({ period, range: { start: start ? start.toISOString() : null, end: now.toISOString() }, counts: { priceIncrease: pin.length, priceList: plCount, total: rows.length }, avgIncrease: mean(allPercents), priceIncrease: pin, customers });
+    } catch (e) { next(e); }
+  });
   app.get('/api/docs/:id', async (req, res, next) => { try { const d = await store.get(req.params.id); d ? res.json(d) : res.status(404).json({ error: 'Not found' }); } catch (e) { next(e); } });
   app.post('/api/docs', editor, async (req, res, next) => {
     const { id, type, data, baseRevision } = req.body || {};
